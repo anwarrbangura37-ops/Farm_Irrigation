@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Farm-Irrigation plot telemetry, forecasts, alerts, and irrigation control
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: farm
+    description: Farm dashboard and field data
 paths:
   /healthz:
     get:
@@ -24,13 +26,286 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /farm/dashboard:
+    get:
+      operationId: getFarmDashboard
+      tags: [farm]
+      summary: Get the farm dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary and plot overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FarmDashboard"
+  /plots:
+    get:
+      operationId: listPlots
+      tags: [farm]
+      summary: List farm plots and latest telemetry
+      responses:
+        "200":
+          description: Farm plots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Plot"
+  /plots/{plotId}/twin:
+    get:
+      operationId: getPlotTwin
+      tags: [farm]
+      summary: Get a plot's digital twin and moisture forecast
+      parameters:
+        - name: plotId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plot twin with recent readings and forecast
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlotTwin"
+        "404":
+          description: Plot not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /alerts:
+    get:
+      operationId: listAlerts
+      tags: [farm]
+      summary: List irrigation alerts
+      responses:
+        "200":
+          description: Current and recent alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IrrigationAlert"
+  /alerts/{alertId}/acknowledge:
+    patch:
+      operationId: acknowledgeAlert
+      tags: [farm]
+      summary: Acknowledge an irrigation alert
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Acknowledged alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IrrigationAlert"
+        "404":
+          description: Alert not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /plots/{plotId}/irrigation:
+    put:
+      operationId: controlIrrigation
+      tags: [farm]
+      summary: Start or stop a plot's irrigation pump
+      parameters:
+        - name: plotId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IrrigationCommand"
+      responses:
+        "200":
+          description: Updated irrigation state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IrrigationState"
+        "404":
+          description: Plot not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /reports/weekly:
+    get:
+      operationId: getWeeklyReport
+      tags: [farm]
+      summary: Get weekly irrigation and moisture reporting
+      responses:
+        "200":
+          description: Weekly report data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklyReport"
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    PlotStatus:
+      type: string
+      enum: [OPTIMAL, WATCH, NEEDS_WATER]
+    NodeStatus:
+      type: string
+      enum: [ONLINE, SYNCING, OFFLINE]
+    Plot:
+      type: object
       required:
+        - id
+        - name
+        - crop
+        - location
+        - areaHectares
+        - moisturePct
+        - temperatureC
+        - humidityPct
+        - vpdKpa
         - status
+        - nodeId
+        - nodeStatus
+        - lastSync
+        - pumpActive
+      properties:
+        id: { type: string }
+        name: { type: string }
+        crop: { type: string }
+        location: { type: string }
+        areaHectares: { type: number }
+        moisturePct: { type: number }
+        temperatureC: { type: number }
+        humidityPct: { type: number }
+        vpdKpa: { type: number }
+        status: { $ref: "#/components/schemas/PlotStatus" }
+        nodeId: { type: string }
+        nodeStatus: { $ref: "#/components/schemas/NodeStatus" }
+        lastSync: { type: string, format: date-time }
+        pumpActive: { type: boolean }
+    FarmDashboard:
+      type: object
+      required:
+        - generatedAt
+        - activePlotCount
+        - averageMoisturePct
+        - urgentAlertCount
+        - onlineNodeCount
+        - totalNodeCount
+        - plots
+      properties:
+        generatedAt: { type: string, format: date-time }
+        activePlotCount: { type: integer }
+        averageMoisturePct: { type: number }
+        urgentAlertCount: { type: integer }
+        onlineNodeCount: { type: integer }
+        totalNodeCount: { type: integer }
+        plots:
+          type: array
+          items: { $ref: "#/components/schemas/Plot" }
+    SoilMoisturePoint:
+      type: object
+      required: [time, moisturePct]
+      properties:
+        time: { type: string, format: date-time }
+        moisturePct: { type: number }
+    PlotTwin:
+      type: object
+      required:
+        - plot
+        - hoursToWilting
+        - history
+        - forecast
+        - forecastConfidence
+      properties:
+        plot: { $ref: "#/components/schemas/Plot" }
+        hoursToWilting: { type: integer }
+        forecastConfidence: { type: integer }
+        history:
+          type: array
+          items: { $ref: "#/components/schemas/SoilMoisturePoint" }
+        forecast:
+          type: array
+          items: { $ref: "#/components/schemas/SoilMoisturePoint" }
+    IrrigationAlert:
+      type: object
+      required:
+        - id
+        - plotId
+        - plotName
+        - severity
+        - title
+        - detail
+        - createdAt
+        - acknowledged
+      properties:
+        id: { type: string }
+        plotId: { type: string }
+        plotName: { type: string }
+        severity: { $ref: "#/components/schemas/PlotStatus" }
+        title: { type: string }
+        detail: { type: string }
+        createdAt: { type: string, format: date-time }
+        acknowledged: { type: boolean }
+    IrrigationCommand:
+      type: object
+      required: [command]
+      properties:
+        command:
+          type: string
+          enum: [START, STOP]
+        durationMinutes:
+          type: integer
+          minimum: 1
+          maximum: 120
+    IrrigationState:
+      type: object
+      required: [plotId, pumpActive, durationMinutes, updatedAt]
+      properties:
+        plotId: { type: string }
+        pumpActive: { type: boolean }
+        durationMinutes: { type: integer }
+        updatedAt: { type: string, format: date-time }
+    WeeklyReport:
+      type: object
+      required: [weekLabel, averageMoisturePct, readingsCount, days]
+      properties:
+        weekLabel: { type: string }
+        averageMoisturePct: { type: number }
+        readingsCount: { type: integer }
+        days:
+          type: array
+          items: { $ref: "#/components/schemas/DailyReport" }
+    DailyReport:
+      type: object
+      required: [day, averageMoisturePct, irrigationMinutes]
+      properties:
+        day: { type: string }
+        averageMoisturePct: { type: number }
+        irrigationMinutes: { type: integer }
 

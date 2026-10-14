@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Farm-Irrigation"
+description = "A low-bandwidth smart irrigation dashboard for smallholder farms in Sierra Leone, showing live soil moisture, digital twin forecasts, field alerts, and secure pump controls."
+version = "1.0.0"
+id = "artifacts/farm-irrigation"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21456
+
+[services.development]
+run = "pnpm --filter @workspace/farm-irrigation run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/farm-irrigation", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/farm-irrigation/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21456"
+BASE_PATH = "/"
