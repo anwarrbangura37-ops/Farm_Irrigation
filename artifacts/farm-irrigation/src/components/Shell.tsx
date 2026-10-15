@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useClerk, useUser } from '@clerk/react';
 import { Activity, Bell, ChartNoAxesCombined, ChevronDown, ChevronRight, CircleHelp, Droplets, LogOut, Menu, Sprout, X } from 'lucide-react';
+import { hasFarmAdminAccess } from '@/lib/farmPermissions';
 
 const nav = [
   { href: '/dashboard', label: 'Overview', icon: Activity },
@@ -16,7 +17,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const { user } = useUser();
   const { signOut } = useClerk();
   const email = user?.primaryEmailAddress?.emailAddress ?? '';
-  const isAdmin = user?.emailAddresses.some((address) => address.emailAddress.toLowerCase() === 'koromajoel933@gmail.com' && address.verification?.status === 'verified') ?? false;
+  const isAdmin = hasFarmAdminAccess(user?.emailAddresses);
   const initials = user?.firstName?.slice(0, 1) || email.slice(0, 1).toUpperCase() || 'F';
 
   return <div className="min-h-[100dvh] bg-[#f4f0e5] md:flex">

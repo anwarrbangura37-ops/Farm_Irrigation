@@ -13,4 +13,5 @@ export const PlotStatus = {
   OPTIMAL: 'OPTIMAL',
   WATCH: 'WATCH',
   NEEDS_WATER: 'NEEDS_WATER',
+  NO_DATA: 'NO_DATA',
 } as const;

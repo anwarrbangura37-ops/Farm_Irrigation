@@ -14,13 +14,19 @@ export interface Plot {
   crop: string;
   location: string;
   areaHectares: number;
-  moisturePct: number;
-  temperatureC: number;
-  humidityPct: number;
-  vpdKpa: number;
+  /** @nullable */
+  moisturePct: number | null;
+  /** @nullable */
+  temperatureC: number | null;
+  /** @nullable */
+  humidityPct: number | null;
+  /** @nullable */
+  vpdKpa: number | null;
   status: PlotStatus;
-  nodeId: string;
+  /** @nullable */
+  nodeId: string | null;
   nodeStatus: NodeStatus;
-  lastSync: Date;
+  /** @nullable */
+  lastSync: Date | null;
   pumpActive: boolean;
 }

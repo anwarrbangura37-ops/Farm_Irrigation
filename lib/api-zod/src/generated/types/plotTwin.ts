@@ -10,8 +10,10 @@ import type { SoilMoisturePoint } from './soilMoisturePoint';
 
 export interface PlotTwin {
   plot: Plot;
-  hoursToWilting: number;
-  forecastConfidence: number;
+  /** @nullable */
+  hoursToWilting: number | null;
+  /** @nullable */
+  forecastConfidence: number | null;
   history: SoilMoisturePoint[];
   forecast: SoilMoisturePoint[];
 }

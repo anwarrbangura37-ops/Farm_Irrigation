@@ -27,7 +27,9 @@ import type {
   IrrigationCommand,
   IrrigationState,
   Plot,
+  PlotInput,
   PlotTwin,
+  PlotUpdate,
   WeeklyReport
 } from './api.schemas';
 
@@ -289,6 +291,183 @@ export function useListPlots<TData = Awaited<ReturnType<typeof listPlots>>, TErr
 
 
 
+
+export const getCreatePlotUrl = () => {
+
+
+
+
+  return `/api/plots`
+}
+
+/**
+ * @summary Add a farm plot
+ */
+export const createPlot = async (plotInput: PlotInput, options?: Parameters<typeof customFetch>[1]): Promise<Plot> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Plot>(getCreatePlotUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(plotInput)
+  }
+);}
+
+
+
+
+
+export const getCreatePlotMutationKey = () => ['createPlot'] as const;
+
+export const getCreatePlotMutationOptions = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPlot>>, TError,CreatePlotMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPlot>>, TError,CreatePlotMutationVariables, TContext> => {
+
+const mutationKey = getCreatePlotMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPlot>>, CreatePlotMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPlot(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePlotMutationResult = NonNullable<Awaited<ReturnType<typeof createPlot>>>
+    export type CreatePlotMutationBody = BodyType<PlotInput>
+    export type CreatePlotMutationError = ErrorType<Error>
+    export type CreatePlotMutationVariables = {data: BodyType<PlotInput>}
+
+    /**
+ * @summary Add a farm plot
+ */
+export const useCreatePlot = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPlot>>, TError,CreatePlotMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createPlot>>,
+        TError,
+        CreatePlotMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreatePlotMutationOptions(options));
+    }
+
+export const getUpdatePlotUrl = (plotId: string,) => {
+
+
+
+
+  return `/api/plots/${plotId}`
+}
+
+/**
+ * @summary Update a farm plot
+ */
+export const updatePlot = async (plotId: string,
+    plotUpdate: PlotUpdate, options?: Parameters<typeof customFetch>[1]): Promise<Plot> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Plot>(getUpdatePlotUrl(plotId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(plotUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdatePlotMutationKey = () => ['updatePlot'] as const;
+
+export const getUpdatePlotMutationOptions = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePlot>>, TError,UpdatePlotMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePlot>>, TError,UpdatePlotMutationVariables, TContext> => {
+
+const mutationKey = getUpdatePlotMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePlot>>, UpdatePlotMutationVariables> = (props) => {
+          const {plotId,data} = props ?? {};
+
+          return  updatePlot(plotId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePlotMutationResult = NonNullable<Awaited<ReturnType<typeof updatePlot>>>
+    export type UpdatePlotMutationBody = BodyType<PlotUpdate>
+    export type UpdatePlotMutationError = ErrorType<Error>
+    export type UpdatePlotMutationVariables = {plotId: string;data: BodyType<PlotUpdate>}
+
+    /**
+ * @summary Update a farm plot
+ */
+export const useUpdatePlot = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePlot>>, TError,UpdatePlotMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePlot>>,
+        TError,
+        UpdatePlotMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdatePlotMutationOptions(options));
+    }
 
 export const getGetPlotTwinUrl = (plotId: string,) => {
 

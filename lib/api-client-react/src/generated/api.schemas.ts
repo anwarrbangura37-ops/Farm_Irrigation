@@ -20,6 +20,7 @@ export const PlotStatus = {
   OPTIMAL: 'OPTIMAL',
   WATCH: 'WATCH',
   NEEDS_WATER: 'NEEDS_WATER',
+  NO_DATA: 'NO_DATA',
 } as const;
 
 export type NodeStatus = typeof NodeStatus[keyof typeof NodeStatus];
@@ -37,15 +38,67 @@ export interface Plot {
   crop: string;
   location: string;
   areaHectares: number;
-  moisturePct: number;
-  temperatureC: number;
-  humidityPct: number;
-  vpdKpa: number;
+  /** @nullable */
+  moisturePct: number | null;
+  /** @nullable */
+  temperatureC: number | null;
+  /** @nullable */
+  humidityPct: number | null;
+  /** @nullable */
+  vpdKpa: number | null;
   status: PlotStatus;
-  nodeId: string;
+  /** @nullable */
+  nodeId: string | null;
   nodeStatus: NodeStatus;
-  lastSync: string;
+  /** @nullable */
+  lastSync: string | null;
   pumpActive: boolean;
+}
+
+export interface PlotInput {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  crop: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  location: string;
+  /**
+     * @maximum 10000
+     * @exclusiveMinimum 0
+     */
+  areaHectares: number;
+}
+
+export interface PlotUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name?: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  crop?: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  location?: string;
+  /**
+     * @maximum 10000
+     * @exclusiveMinimum 0
+     */
+  areaHectares?: number;
 }
 
 export interface FarmDashboard {
@@ -65,8 +118,10 @@ export interface SoilMoisturePoint {
 
 export interface PlotTwin {
   plot: Plot;
-  hoursToWilting: number;
-  forecastConfidence: number;
+  /** @nullable */
+  hoursToWilting: number | null;
+  /** @nullable */
+  forecastConfidence: number | null;
   history: SoilMoisturePoint[];
   forecast: SoilMoisturePoint[];
 }

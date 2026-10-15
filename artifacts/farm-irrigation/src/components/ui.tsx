@@ -6,8 +6,8 @@ export function Panel({ children, className = '', testId }: { children: ReactNod
 }
 
 export function StatusBadge({ status, testId }: { status: string; testId?: string }) {
-  const label = status === 'NEEDS_WATER' ? 'Needs water' : status === 'OPTIMAL' ? 'Optimal' : 'Watch';
-  const tone = status === 'NEEDS_WATER' ? 'bg-[#f9e5dc] text-[#a54830]' : status === 'OPTIMAL' ? 'bg-[#e3eee1] text-[#356342]' : 'bg-[#f7ebcf] text-[#8d6418]';
+  const label = status === 'NO_DATA' ? 'No readings' : status === 'NEEDS_WATER' ? 'Needs water' : status === 'OPTIMAL' ? 'Optimal' : 'Watch';
+  const tone = status === 'NO_DATA' ? 'bg-[#e9e7de] text-[#667064]' : status === 'NEEDS_WATER' ? 'bg-[#f9e5dc] text-[#a54830]' : status === 'OPTIMAL' ? 'bg-[#e3eee1] text-[#356342]' : 'bg-[#f7ebcf] text-[#8d6418]';
   return <span data-testid={testId || `status-plot-${status.toLowerCase()}`} className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-[.02em] ${tone}`}><span className="h-1.5 w-1.5 rounded-full bg-current" />{label}</span>;
 }
 

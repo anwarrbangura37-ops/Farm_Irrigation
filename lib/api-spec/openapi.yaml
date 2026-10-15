@@ -52,6 +52,65 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Plot"
+    post:
+      operationId: createPlot
+      tags: [farm]
+      summary: Add a farm plot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlotInput"
+      responses:
+        "201":
+          description: Plot created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plot"
+        "400":
+          description: Invalid plot details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /plots/{plotId}:
+    patch:
+      operationId: updatePlot
+      tags: [farm]
+      summary: Update a farm plot
+      parameters:
+        - name: plotId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlotUpdate"
+      responses:
+        "200":
+          description: Updated plot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plot"
+        "400":
+          description: Invalid plot details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Plot not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /plots/{plotId}/twin:
     get:
       operationId: getPlotTwin
@@ -172,7 +231,7 @@ components:
           type: string
     PlotStatus:
       type: string
-      enum: [OPTIMAL, WATCH, NEEDS_WATER]
+      enum: [OPTIMAL, WATCH, NEEDS_WATER, NO_DATA]
     NodeStatus:
       type: string
       enum: [ONLINE, SYNCING, OFFLINE]
@@ -199,15 +258,30 @@ components:
         crop: { type: string }
         location: { type: string }
         areaHectares: { type: number }
-        moisturePct: { type: number }
-        temperatureC: { type: number }
-        humidityPct: { type: number }
-        vpdKpa: { type: number }
+        moisturePct: { type: ["number", "null"] }
+        temperatureC: { type: ["number", "null"] }
+        humidityPct: { type: ["number", "null"] }
+        vpdKpa: { type: ["number", "null"] }
         status: { $ref: "#/components/schemas/PlotStatus" }
-        nodeId: { type: string }
+        nodeId: { type: ["string", "null"] }
         nodeStatus: { $ref: "#/components/schemas/NodeStatus" }
-        lastSync: { type: string, format: date-time }
+        lastSync: { type: ["string", "null"], format: date-time }
         pumpActive: { type: boolean }
+    PlotInput:
+      type: object
+      required: [name, crop, location, areaHectares]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+        crop: { type: string, minLength: 1, maxLength: 80 }
+        location: { type: string, minLength: 1, maxLength: 120 }
+        areaHectares: { type: number, exclusiveMinimum: 0, maximum: 10000 }
+    PlotUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+        crop: { type: string, minLength: 1, maxLength: 80 }
+        location: { type: string, minLength: 1, maxLength: 120 }
+        areaHectares: { type: number, exclusiveMinimum: 0, maximum: 10000 }
     FarmDashboard:
       type: object
       required:
@@ -244,8 +318,8 @@ components:
         - forecastConfidence
       properties:
         plot: { $ref: "#/components/schemas/Plot" }
-        hoursToWilting: { type: integer }
-        forecastConfidence: { type: integer }
+        hoursToWilting: { type: ["integer", "null"] }
+        forecastConfidence: { type: ["integer", "null"] }
         history:
           type: array
           items: { $ref: "#/components/schemas/SoilMoisturePoint" }

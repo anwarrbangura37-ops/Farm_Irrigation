@@ -1,6 +1,8 @@
 import {
   AcknowledgeAlertParams,
   AcknowledgeAlertResponse,
+  CreatePlotBody,
+  CreatePlotResponse,
   ControlIrrigationBody,
   ControlIrrigationParams,
   ControlIrrigationResponse,
@@ -10,6 +12,9 @@ import {
   GetWeeklyReportResponse,
   ListAlertsResponse,
   ListPlotsResponse,
+  UpdatePlotBody,
+  UpdatePlotParams,
+  UpdatePlotResponse,
 } from "@workspace/api-zod";
 import {
   db,
@@ -20,6 +25,7 @@ import {
 } from "@workspace/db";
 import { and, desc, eq, gte } from "drizzle-orm";
 import { Router, type IRouter, type RequestHandler } from "express";
+import { randomUUID } from "node:crypto";
 import { requireFarmAdmin, requireFarmUser } from "../middlewares/farmAuth";
 
 const router: IRouter = Router();
@@ -39,7 +45,7 @@ function asPlot(row: typeof farmPlots.$inferSelect) {
     status: row.status,
     nodeId: row.nodeId,
     nodeStatus: row.nodeStatus,
-    lastSync: row.lastSync.toISOString(),
+    lastSync: row.lastSync?.toISOString() ?? null,
     pumpActive: row.pumpActive,
   };
 }
@@ -52,11 +58,16 @@ router.get("/farm/dashboard", async (_req, res): Promise<void> => {
     .select()
     .from(irrigationAlerts)
     .where(eq(irrigationAlerts.acknowledged, false));
-  const onlineNodeCount = plots.filter(
+  const plotsWithNodes = plots.filter((plot) => plot.nodeId !== null);
+  const onlineNodeCount = plotsWithNodes.filter(
     (plot) => plot.nodeStatus === "ONLINE",
   ).length;
-  const averageMoisturePct = plots.length
-    ? plots.reduce((sum, plot) => sum + plot.moisturePct, 0) / plots.length
+  const moistureValues = plots
+    .map((plot) => plot.moisturePct)
+    .filter((moisture): moisture is number => moisture !== null);
+  const averageMoisturePct = moistureValues.length
+    ? moistureValues.reduce((sum, moisture) => sum + moisture, 0) /
+      moistureValues.length
     : 0;
 
   res.json(
@@ -68,7 +79,7 @@ router.get("/farm/dashboard", async (_req, res): Promise<void> => {
         (alert) => alert.severity === "NEEDS_WATER",
       ).length,
       onlineNodeCount,
-      totalNodeCount: plots.length,
+      totalNodeCount: plotsWithNodes.length,
       plots: plots.map(asPlot),
     }),
   );
@@ -78,6 +89,98 @@ router.get("/plots", async (_req, res): Promise<void> => {
   const plots = await db.select().from(farmPlots).orderBy(farmPlots.name);
   res.json(ListPlotsResponse.parse(plots.map(asPlot)));
 });
+
+router.post("/plots", async (req, res): Promise<void> => {
+  const body = CreatePlotBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: body.error.message });
+    return;
+  }
+
+  const plotDetails = {
+    name: body.data.name.trim(),
+    crop: body.data.crop.trim(),
+    location: body.data.location.trim(),
+    areaHectares: body.data.areaHectares,
+  };
+  if (!plotDetails.name || !plotDetails.crop || !plotDetails.location) {
+    res.status(400).json({ error: "Plot name, crop, and location are required." });
+    return;
+  }
+
+  const [plot] = await db
+    .insert(farmPlots)
+    .values({
+      id: randomUUID(),
+      ...plotDetails,
+      moisturePct: null,
+      temperatureC: null,
+      humidityPct: null,
+      vpdKpa: null,
+      status: "NO_DATA",
+      nodeId: null,
+      nodeStatus: "OFFLINE",
+      lastSync: null,
+    })
+    .returning();
+
+  res.status(201).json(CreatePlotResponse.parse(asPlot(plot)));
+});
+
+router.patch(
+  "/plots/:plotId",
+  requireFarmAdmin,
+  async (req, res): Promise<void> => {
+    const params = UpdatePlotParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+
+    const body = UpdatePlotBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: body.error.message });
+      return;
+    }
+
+    const changes: {
+      name?: string;
+      crop?: string;
+      location?: string;
+      areaHectares?: number;
+    } = {};
+    for (const field of ["name", "crop", "location"] as const) {
+      const value = body.data[field];
+      if (value !== undefined) {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          res.status(400).json({ error: `${field} cannot be empty.` });
+          return;
+        }
+        changes[field] = trimmed;
+      }
+    }
+    if (body.data.areaHectares !== undefined) {
+      changes.areaHectares = body.data.areaHectares;
+    }
+    if (Object.keys(changes).length === 0) {
+      res.status(400).json({ error: "Provide at least one plot field to update." });
+      return;
+    }
+
+    const [plot] = await db
+      .update(farmPlots)
+      .set(changes)
+      .where(eq(farmPlots.id, params.data.plotId))
+      .returning();
+    if (!plot) {
+      res.status(404).json({ error: "Plot not found." });
+      return;
+    }
+
+    res.json(UpdatePlotResponse.parse(asPlot(plot)));
+  },
+);
 
 router.get("/plots/:plotId/twin", async (req, res): Promise<void> => {
   const params = GetPlotTwinParams.safeParse(req.params);
@@ -120,6 +223,18 @@ router.get("/plots/:plotId/twin", async (req, res): Promise<void> => {
     latest && oldest ? oldest.moisturePct - latest.moisturePct : 0;
   const dryingRate = Math.max(0.2, observedDrop / hoursObserved);
   const currentMoisture = latest?.moisturePct ?? plot.moisturePct;
+  if (currentMoisture === null) {
+    res.json(
+      GetPlotTwinResponse.parse({
+        plot: asPlot(plot),
+        hoursToWilting: null,
+        forecastConfidence: null,
+        history,
+        forecast: [],
+      }),
+    );
+    return;
+  }
   const forecast = [12, 24, 48].map((hours) => ({
     time: new Date(Date.now() + hours * 60 * 60 * 1000).toISOString(),
     moisturePct: Math.max(

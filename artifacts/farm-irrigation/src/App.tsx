@@ -9,7 +9,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Shell } from '@/components/Shell';
 import { Landing } from '@/pages/Landing';
-import { Dashboard } from '@/pages/Dashboard';
+import { Dashboard } from '@/pages/DashboardOverview';
 import { Plots } from '@/pages/Plots';
 import { PlotTwin } from '@/pages/PlotTwin';
 import { Alerts } from '@/pages/Alerts';

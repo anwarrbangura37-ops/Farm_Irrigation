@@ -33,14 +33,14 @@ export const GetFarmDashboardResponse = zod.object({
   "crop": zod.string(),
   "location": zod.string(),
   "areaHectares": zod.number(),
-  "moisturePct": zod.number(),
-  "temperatureC": zod.number(),
-  "humidityPct": zod.number(),
-  "vpdKpa": zod.number(),
-  "status": zod.enum(['OPTIMAL', 'WATCH', 'NEEDS_WATER']),
-  "nodeId": zod.string(),
+  "moisturePct": zod.number().nullable(),
+  "temperatureC": zod.number().nullable(),
+  "humidityPct": zod.number().nullable(),
+  "vpdKpa": zod.number().nullable(),
+  "status": zod.enum(['OPTIMAL', 'WATCH', 'NEEDS_WATER', 'NO_DATA']),
+  "nodeId": zod.string().nullable(),
   "nodeStatus": zod.enum(['ONLINE', 'SYNCING', 'OFFLINE']),
-  "lastSync": zod.coerce.date(),
+  "lastSync": zod.coerce.date().nullable(),
   "pumpActive": zod.boolean()
 }))
 })
@@ -55,17 +55,99 @@ export const ListPlotsResponseItem = zod.object({
   "crop": zod.string(),
   "location": zod.string(),
   "areaHectares": zod.number(),
-  "moisturePct": zod.number(),
-  "temperatureC": zod.number(),
-  "humidityPct": zod.number(),
-  "vpdKpa": zod.number(),
-  "status": zod.enum(['OPTIMAL', 'WATCH', 'NEEDS_WATER']),
-  "nodeId": zod.string(),
+  "moisturePct": zod.number().nullable(),
+  "temperatureC": zod.number().nullable(),
+  "humidityPct": zod.number().nullable(),
+  "vpdKpa": zod.number().nullable(),
+  "status": zod.enum(['OPTIMAL', 'WATCH', 'NEEDS_WATER', 'NO_DATA']),
+  "nodeId": zod.string().nullable(),
   "nodeStatus": zod.enum(['ONLINE', 'SYNCING', 'OFFLINE']),
-  "lastSync": zod.coerce.date(),
+  "lastSync": zod.coerce.date().nullable(),
   "pumpActive": zod.boolean()
 })
 export const ListPlotsResponse = zod.array(ListPlotsResponseItem)
+
+
+/**
+ * @summary Add a farm plot
+ */
+export const createPlotBodyNameMax = 80;
+
+export const createPlotBodyCropMax = 80;
+
+export const createPlotBodyLocationMax = 120;
+
+export const createPlotBodyAreaHectaresExclusiveMin = 0;
+export const createPlotBodyAreaHectaresMax = 10000;
+
+
+
+export const CreatePlotBody = zod.object({
+  "name": zod.string().min(1).max(createPlotBodyNameMax),
+  "crop": zod.string().min(1).max(createPlotBodyCropMax),
+  "location": zod.string().min(1).max(createPlotBodyLocationMax),
+  "areaHectares": zod.number().gt(createPlotBodyAreaHectaresExclusiveMin).max(createPlotBodyAreaHectaresMax)
+})
+
+export const CreatePlotResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "crop": zod.string(),
+  "location": zod.string(),
+  "areaHectares": zod.number(),
+  "moisturePct": zod.number().nullable(),
+  "temperatureC": zod.number().nullable(),
+  "humidityPct": zod.number().nullable(),
+  "vpdKpa": zod.number().nullable(),
+  "status": zod.enum(['OPTIMAL', 'WATCH', 'NEEDS_WATER', 'NO_DATA']),
+  "nodeId": zod.string().nullable(),
+  "nodeStatus": zod.enum(['ONLINE', 'SYNCING', 'OFFLINE']),
+  "lastSync": zod.coerce.date().nullable(),
+  "pumpActive": zod.boolean()
+})
+
+
+/**
+ * @summary Update a farm plot
+ */
+export const UpdatePlotParams = zod.object({
+  "plotId": zod.coerce.string()
+})
+
+export const updatePlotBodyNameMax = 80;
+
+export const updatePlotBodyCropMax = 80;
+
+export const updatePlotBodyLocationMax = 120;
+
+export const updatePlotBodyAreaHectaresExclusiveMin = 0;
+export const updatePlotBodyAreaHectaresMax = 10000;
+
+
+
+export const UpdatePlotBody = zod.object({
+  "name": zod.string().min(1).max(updatePlotBodyNameMax).optional(),
+  "crop": zod.string().min(1).max(updatePlotBodyCropMax).optional(),
+  "location": zod.string().min(1).max(updatePlotBodyLocationMax).optional(),
+  "areaHectares": zod.number().gt(updatePlotBodyAreaHectaresExclusiveMin).max(updatePlotBodyAreaHectaresMax).optional()
+})
+
+export const UpdatePlotResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "crop": zod.string(),
+  "location": zod.string(),
+  "areaHectares": zod.number(),
+  "moisturePct": zod.number().nullable(),
+  "temperatureC": zod.number().nullable(),
+  "humidityPct": zod.number().nullable(),
+  "vpdKpa": zod.number().nullable(),
+  "status": zod.enum(['OPTIMAL', 'WATCH', 'NEEDS_WATER', 'NO_DATA']),
+  "nodeId": zod.string().nullable(),
+  "nodeStatus": zod.enum(['ONLINE', 'SYNCING', 'OFFLINE']),
+  "lastSync": zod.coerce.date().nullable(),
+  "pumpActive": zod.boolean()
+})
 
 
 /**
@@ -82,18 +164,18 @@ export const GetPlotTwinResponse = zod.object({
   "crop": zod.string(),
   "location": zod.string(),
   "areaHectares": zod.number(),
-  "moisturePct": zod.number(),
-  "temperatureC": zod.number(),
-  "humidityPct": zod.number(),
-  "vpdKpa": zod.number(),
-  "status": zod.enum(['OPTIMAL', 'WATCH', 'NEEDS_WATER']),
-  "nodeId": zod.string(),
+  "moisturePct": zod.number().nullable(),
+  "temperatureC": zod.number().nullable(),
+  "humidityPct": zod.number().nullable(),
+  "vpdKpa": zod.number().nullable(),
+  "status": zod.enum(['OPTIMAL', 'WATCH', 'NEEDS_WATER', 'NO_DATA']),
+  "nodeId": zod.string().nullable(),
   "nodeStatus": zod.enum(['ONLINE', 'SYNCING', 'OFFLINE']),
-  "lastSync": zod.coerce.date(),
+  "lastSync": zod.coerce.date().nullable(),
   "pumpActive": zod.boolean()
 }),
-  "hoursToWilting": zod.number().int(),
-  "forecastConfidence": zod.number().int(),
+  "hoursToWilting": zod.number().int().nullable(),
+  "forecastConfidence": zod.number().int().nullable(),
   "history": zod.array(zod.object({
   "time": zod.coerce.date(),
   "moisturePct": zod.number()
@@ -112,7 +194,7 @@ export const ListAlertsResponseItem = zod.object({
   "id": zod.string(),
   "plotId": zod.string(),
   "plotName": zod.string(),
-  "severity": zod.enum(['OPTIMAL', 'WATCH', 'NEEDS_WATER']),
+  "severity": zod.enum(['OPTIMAL', 'WATCH', 'NEEDS_WATER', 'NO_DATA']),
   "title": zod.string(),
   "detail": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -132,7 +214,7 @@ export const AcknowledgeAlertResponse = zod.object({
   "id": zod.string(),
   "plotId": zod.string(),
   "plotName": zod.string(),
-  "severity": zod.enum(['OPTIMAL', 'WATCH', 'NEEDS_WATER']),
+  "severity": zod.enum(['OPTIMAL', 'WATCH', 'NEEDS_WATER', 'NO_DATA']),
   "title": zod.string(),
   "detail": zod.string(),
   "createdAt": zod.coerce.date(),
