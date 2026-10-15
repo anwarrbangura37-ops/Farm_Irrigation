@@ -65,7 +65,7 @@ export function Dashboard() {
             data-testid="text-dashboard-greeting"
             className="mt-2 font-display text-3xl font-extrabold tracking-[-.06em] sm:text-[40px]"
           >
-            Hello, {greetingName}.
+            Hello {greetingName}
           </h1>
           <p className="mt-2 text-sm text-[#728073]">
             Here’s what your farm is telling us today.
